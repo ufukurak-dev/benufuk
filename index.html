@@ -1,0 +1,327 @@
+Minecraft'ın sandığını birebir çizemem, o Mojang'ın tasarımı. Ama aynı hissi veren, kendimize ait piksel havasında bir hazine sandığı yaptım: tıklayınca kapak açılıyor, altın ışık parlıyor, eski bir kâğıt yukarı süzülüp videoyu oynatıyor. Tam dosya:
+
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ufuk</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system, 'Segoe UI', Helvetica, sans-serif; background:#000; color:#f5f5f7; overflow-x:hidden; }
+
+#space { position:fixed; inset:0; z-index:0; background:radial-gradient(ellipse at bottom, #0b1030 0%, #000 70%); }
+.hero, section, footer { position:relative; z-index:1; }
+
+.meteor { position:fixed; top:0; left:0; z-index:5; pointer-events:none; will-change:transform; }
+.meteor .tail { position:absolute; top:10px; left:40px; width:220px; height:14px; border-radius:10px;
+background:linear-gradient(90deg, rgba(255,170,60,.9), rgba(255,90,40,.4), transparent);
+transform:rotate(-40deg); transform-origin:left center; filter:blur(3px); }
+.meteor .rock { font-size:64px; position:relative; }
+.meteor .monkey { font-size:44px; position:absolute; top:-34px; left:10px; animation:wobble 1s infinite ease-in-out; }
+@keyframes wobble { 50% { transform:rotate(-12deg) translateY(-4px); } }
+
+nav { position:fixed; top:0; width:100%; height:50px; line-height:50px; text-align:center; font-size:.95rem;
+font-weight:600; background:rgba(0,0,0,.5); backdrop-filter:blur(20px); z-index:10; color:#f5f5f7; }
+
+.burger { position:fixed; top:10px; left:20px; z-index:30; width:36px; height:30px; cursor:pointer;
+display:flex; flex-direction:column; justify-content:center; gap:6px; }
+.burger span { display:block; height:3px; background:#f5f5f7; border-radius:3px; transition:.3s; }
+.burger.open span:nth-child(1) { transform:translateY(9px) rotate(45deg); }
+.burger.open span:nth-child(2) { opacity:0; }
+.burger.open span:nth-child(3) { transform:translateY(-9px) rotate(-45deg); }
+
+.drawer { position:fixed; top:0; left:-300px; width:270px; height:100vh; z-index:25;
+background:rgba(255,255,255,.06);
+backdrop-filter:blur(28px) saturate(160%); -webkit-backdrop-filter:blur(28px) saturate(160%);
+border-right:1px solid rgba(255,255,255,.15); box-shadow:8px 0 40px rgba(0,0,0,.4);
+padding:80px 32px; transition:left .45s cubic-bezier(.2,.8,.2,1); }
+.drawer.open { left:0; }
+.drawer a { display:block; color:#f5f5f7; text-decoration:none; font-size:1.4rem; margin-bottom:24px; transition:color .3s, transform .3s; }
+.drawer a:hover { color:#7cf7c4; transform:translateX(6px); }
+
+.badge { position:fixed; top:60px; right:24px; z-index:20; text-align:center; width:120px; }
+.badge svg { width:72px; height:72px; border-radius:50%; border:3px solid #d4af37;
+box-shadow:0 0 18px rgba(212,175,55,.5); }
+.badge div { margin-top:8px; color:#d4af37; font-size:.75rem; font-weight:600; line-height:1.3; }
+
+.hero { height:200vh; }
+.hero-inner { position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
+align-items:center; justify-content:center; text-align:center; }
+.hero h1 { font-size:clamp(3rem,10vw,8rem); font-weight:700; letter-spacing:-.04em;
+background:linear-gradient(90deg,#7cf7c4,#6b8cff,#c77dff);
+-webkit-background-clip:text; color:transparent; }
+.hero p { font-size:clamp(1.1rem,2.5vw,1.6rem); color:#a1a1a6; margin-top:16px; }
+.scroll-hint { position:absolute; bottom:40px; color:#6e6e73; font-size:.9rem; animation:bob 2s infinite; }
+@keyframes bob { 50% { transform:translateY(8px); } }
+
+section { min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+align-items:center; text-align:center; padding:80px 24px; }
+.eyebrow { color:#ffb86b; font-weight:600; font-size:1rem; margin-bottom:12px; }
+section h2 { font-size:clamp(2.2rem,6vw,4.5rem); font-weight:700; letter-spacing:-.03em; max-width:900px; line-height:1.1; }
+section p.lead { font-size:clamp(1.1rem,2.2vw,1.5rem); color:#a1a1a6; max-width:700px; margin-top:24px; line-height:1.5; }
+
+.reveal { opacity:0; transform:translateY(60px); transition:opacity 1s ease, transform 1s ease; }
+.reveal.show { opacity:1; transform:none; }
+
+.skills { width:100%; max-width:640px; margin-top:48px; text-align:left; }
+.skill { margin-bottom:28px; }
+.skill span { font-size:1.1rem; }
+.track { height:8px; background:rgba(255,255,255,.08); border-radius:8px; margin-top:10px; overflow:hidden; }
+.fill { height:100%; width:0; border-radius:8px; background:linear-gradient(90deg,#7cf7c4,#6b8cff);
+transition:width 1.6s cubic-bezier(.2,.8,.2,1); }
+
+/* Kahkaha Sandığı */
+.loot { display:flex; flex-direction:column; align-items:center; margin-top:40px; }
+.paper { width:min(340px,90vw); max-height:0; opacity:0; overflow:hidden;
+transform:translateY(120px) scale(.5); transition:all .9s cubic-bezier(.2,.8,.2,1) .25s;
+background:#f3e7c9; color:#3b2410; border-radius:8px; padding:0 14px;
+box-shadow:0 0 0 4px #c9b38a, 0 20px 50px rgba(0,0,0,.6); }
+.loot.open .paper { max-height:900px; opacity:1; transform:none; padding:14px; margin-bottom:24px; }
+.paper h3 { font-family:'Courier New', monospace; margin-bottom:10px; }
+.paper iframe { width:100%; aspect-ratio:9/16; max-height:520px; border:0; border-radius:6px; background:#000; }
+.paper .bos { padding:30px 10px; font-family:'Courier New', monospace; }
+.paper button { margin-top:12px; background:#3b2410; }
+.paper button:hover { background:#5a3a1c; }
+
+.chest { position:relative; width:200px; height:170px; cursor:pointer; perspective:700px; transition:transform .2s; }
+.chest:hover { transform:scale(1.05) rotate(-1deg); }
+.chest .lid, .chest .box { position:absolute; left:0; width:200px; border:6px solid #2e1a0b; image-rendering:pixelated;
+background:repeating-linear-gradient(90deg,#9b6534 0 30px,#87562b 30px 34px); }
+.chest .lid { bottom:100px; height:64px; border-radius:18px 18px 2px 2px; transform-origin:bottom center;
+transition:transform .6s cubic-bezier(.3,1.6,.5,1); z-index:3; }
+.chest .box { bottom:0; height:104px; border-radius:2px 2px 8px 8px; z-index:2; }
+.chest .band { position:absolute; top:0; bottom:0; width:14px; background:#5a5a62; }
+.chest .band.l { left:24px; } .chest .band.r { right:24px; }
+.chest .lock { position:absolute; left:50%; top:-16px; transform:translateX(-50%); width:30px; height:36px; z-index:4;
+background:#e2b93b; border:4px solid #2e1a0b; border-radius:6px; }
+.chest .glow { position:absolute; left:20px; right:20px; bottom:96px; height:10px; border-radius:50%;
+background:#ffd86b; filter:blur(12px); opacity:0; transition:opacity .4s; z-index:1; }
+.loot.open .chest .lid { transform:rotateX(115deg); }
+.loot.open .chest .glow { opacity:1; height:60px; }
+.chest-hint { margin-top:16px; color:#a1a1a6; font-size:.95rem; }
+
+.inv { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:16px;
+width:100%; max-width:760px; margin-top:48px; }
+.slot { aspect-ratio:1; border-radius:18px; background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.12); backdrop-filter:blur(10px);
+display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+color:#6e6e73; font-size:.85rem; transition:transform .3s, border-color .3s; }
+.slot .ico { font-size:2.2rem; opacity:.5; }
+.slot:hover { transform:translateY(-4px); border-color:#7cf7c4; }
+
+.tip-box { margin-top:40px; background:rgba(29,29,31,.8); backdrop-filter:blur(10px); border-radius:24px; padding:40px; max-width:640px; width:100%; }
+.tip-box p { font-size:1.3rem; min-height:3.5em; transition:opacity .4s; }
+button { margin-top:24px; background:#0071e3; color:#fff; border:none; border-radius:980px;
+padding:12px 28px; font-size:1rem; cursor:pointer; transition:transform .2s, background .2s; }
+button:hover { background:#0077ed; transform:scale(1.05); }
+
+footer { text-align:center; padding:60px 24px; color:#6e6e73; font-size:.85rem; border-top:1px solid #1d1d1f; }
+</style>
+</head>
+<body>
+
+<canvas id="space"></canvas>
+
+<div class="meteor" id="meteor">
+<div class="tail"></div>
+<div class="rock">☄️</div>
+<div class="monkey">🐒</div>
+</div>
+
+<nav>Ufuk</nav>
+
+<div class="burger" id="burger" onclick="menuAcKapa()"><span></span><span></span><span></span></div>
+<div class="drawer" id="drawer">
+<a href="#ben" onclick="menuAcKapa()">Ben</a>
+<a href="#yetenek" onclick="menuAcKapa()">Yetenekler</a>
+<a href="#deneme" onclick="menuAcKapa()">Denediklerim</a>
+<a href="#sandik" onclick="menuAcKapa()">🎁 Kahkaha Sandığı</a>
+<a href="#envanter" onclick="menuAcKapa()">🎒 Envanter</a>
+<a href="#trik" onclick="menuAcKapa()">Trikler</a>
+</div>
+
+<div class="badge">
+<svg viewBox="0 0 100 100">
+<circle cx="50" cy="50" r="50" fill="#E30A17"/>
+<circle cx="40" cy="50" r="25" fill="#fff"/>
+<circle cx="46" cy="50" r="20" fill="#E30A17"/>
+<polygon fill="#fff" points="56,50 64.28,47.3 64.29,38.59 69.42,45.63 77.71,42.94 72.6,50 77.71,57.06 69.42,54.37 64.29,61.41 64.28,52.7"/>
+</svg>
+<div>İlelebet payidar kalacaktır.</div>
+</div>
+
+<div class="hero">
+<div class="hero-inner" id="heroInner">
+<h1>Ufuk.</h1>
+<p>Oyuncu. Kâşif. Çay tiryakisi.</p>
+<div class="scroll-hint">Aşağı kaydır ↓</div>
+</div>
+</div>
+
+<section id="ben">
+<div class="eyebrow reveal">Karakter özeti</div>
+<h2 class="reveal">Günümün çoğu bilgisayar başında geçer. Kalanı da çay ocağında.</h2>
+<p class="lead reveal">Oyun oynamayı, arkadaşlarla muhabbeti ve yeni yerler keşfetmeyi severim. Respawn noktam belli: en yakın çaycı.</p>
+</section>
+
+<section id="yetenek">
+<div class="eyebrow reveal">Yetenek ağacı</div>
+<h2 class="reveal">Güçlü yanlar. Ve dürüstlük.</h2>
+<div class="skills">
+<div class="skill reveal"><span>Bilgisayar toplama ve tamir</span><div class="track"><div class="fill" data-w="85"></div></div></div>
+<div class="skill reveal"><span>Takımı sırtında taşıma</span><div class="track"><div class="fill" data-w="6"></div></div></div>
+<div class="skill reveal"><span>"Bir el daha" deyip 3 saat oynama</span><div class="track"><div class="fill" data-w="50"></div></div></div>
+<div class="skill reveal"><span>Sabah erken kalkma</span><div class="track"><div class="fill" data-w="8"></div></div></div>
+</div>
+</section>
+
+<section id="deneme">
+<div class="eyebrow reveal">Şu an denediklerim</div>
+<h2 class="reveal">Ben fikir veriyorum. Yapay zekâ yazıyor.</h2>
+<p class="lead reveal">Sonra ikimiz birlikte neden çalışmadığını düşünüyoruz. Bu siteyi de tamamen vibe coding ile yaptım.</p>
+</section>
+
+<section id="sandik">
+<div class="eyebrow reveal">🎁 Kahkaha Sandığı</div>
+<h2 class="reveal">Aç bakalım içinden ne çıkacak.</h2>
+<div class="loot reveal" id="loot">
+<div class="paper">
+<h3>📜 Bugünün ganimeti</h3>
+<div id="ekran"></div>
+<button onclick="siradaki(event)">🎲 Sıradaki</button>
+</div>
+<div class="chest" onclick="sandik()">
+<div class="glow"></div>
+<div class="lid"></div>
+<div class="box"><div class="band l"></div><div class="band r"></div><div class="lock"></div></div>
+</div>
+<div class="chest-hint" id="ipucu">Sandığa tıkla</div>
+</div>
+</section>
+
+<section id="envanter">
+<div class="eyebrow reveal">🎒 Envanter</div>
+<h2 class="reveal">Craft ettiğim aletler burada.</h2>
+<p class="lead reveal">Şimdilik çanta boş. İlk loot yolda, yükleniyor... %3.</p>
+<div class="inv reveal">
+<div class="slot"><div class="ico">🔒</div>Yakında</div>
+<div class="slot"><div class="ico">🔒</div>Yakında</div>
+<div class="slot"><div class="ico">🔒</div>Yakında</div>
+<div class="slot"><div class="ico">🔒</div>Yakında</div>
+</div>
+</section>
+
+<section id="trik">
+<div class="eyebrow reveal">Günün triki</div>
+<h2 class="reveal">Küçük bilgiler. Büyük kurtarışlar.</h2>
+<div class="tip-box reveal">
+<p id="trick">Butona bas, bilgelik gelsin.</p>
+<button onclick="yeniTrik()">Bir trik daha</button>
+</div>
+</section>
+
+<footer>Vibe coding ile yapıldı. Hata bulursan özellik say. © Ufuk</footer>
+
+<script>
+// === KAHKAHA SANDIĞI VİDEO LİSTESİ ===
+// YouTube Shorts linkinin sonundaki kodu buraya yaz.
+// Örnek: youtube.com/shorts/AbC123xyz -> "AbC123xyz"
+const videolar = [
+"crGcRNVxKV0",
+"BURAYA_KOD_2",
+];
+
+let sira = -1;
+function sandik(){
+const l = document.getElementById('loot');
+l.classList.toggle('open');
+if (l.classList.contains('open')) { siradaki(); document.getElementById('ipucu').textContent = 'Kapatmak için tekrar tıkla'; }
+else { document.getElementById('ekran').innerHTML = ''; document.getElementById('ipucu').textContent = 'Sandığa tıkla'; }
+}
+function siradaki(e){
+if (e) e.stopPropagation();
+const ekran = document.getElementById('ekran');
+if (videolar.length === 0) { ekran.innerHTML = '<div class="bos">Sandık şu an boş.<br>Ufuk henüz loot koymamış 🐒</div>'; return; }
+let yeni;
+do { yeni = Math.floor(Math.random() * videolar.length); } while (videolar.length > 1 && yeni === sira);
+sira = yeni;
+ekran.innerHTML = `<iframe src="https://www.youtube.com/embed/${videolar[sira]}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+}
+
+function menuAcKapa(){
+document.getElementById('burger').classList.toggle('open');
+document.getElementById('drawer').classList.toggle('open');
+}
+
+const c = document.getElementById('space'), ctx = c.getContext('2d');
+let stars = [];
+function boyutla(){
+c.width = innerWidth; c.height = innerHeight;
+stars = Array.from({length:260}, () => ({
+x: Math.random()*c.width, y: Math.random()*c.height,
+z: Math.random()*0.8 + 0.2, t: Math.random()*Math.PI*2
+}));
+}
+boyutla(); addEventListener('resize', boyutla);
+function ciz(){
+ctx.clearRect(0,0,c.width,c.height);
+for (const s of stars){
+s.t += 0.03;
+const y = ((s.y - scrollY*s.z*0.4) % c.height + c.height) % c.height;
+ctx.globalAlpha = 0.5 + Math.sin(s.t)*0.4*s.z;
+ctx.fillStyle = '#fff';
+ctx.beginPath(); ctx.arc(s.x, y, s.z*1.6, 0, Math.PI*2); ctx.fill();
+}
+ctx.globalAlpha = 1;
+requestAnimationFrame(ciz);
+}
+ciz();
+
+const meteor = document.getElementById('meteor');
+const hero = document.getElementById('heroInner');
+function kaydir(){
+const max = document.body.scrollHeight - innerHeight;
+const p = max > 0 ? scrollY / max : 0;
+const x = innerWidth * (1.05 - 1.3*p);
+const y = innerHeight * (-0.15 + 1.3*p);
+meteor.style.transform = `translate(${x}px, ${y}px)`;
+const h = Math.min(scrollY / innerHeight, 1);
+hero.style.transform = `scale(${1 - h*0.3})`;
+hero.style.opacity = 1 - h;
+}
+addEventListener('scroll', kaydir); kaydir();
+
+const obs = new IntersectionObserver(entries => {
+entries.forEach(e => {
+if (e.isIntersecting) {
+e.target.classList.add('show');
+const f = e.target.querySelector('.fill');
+if (f) f.style.width = f.dataset.w + '%';
+}
+});
+}, { threshold: 0.2 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+const trikler = [
+"Windows + V: kopyaladığın her şeyin geçmişini gösterir.",
+"Windows + Shift + S: ekranın istediğin kısmının görüntüsünü alır.",
+"Ctrl + Shift + T: yanlışlıkla kapattığın sekmeyi geri getirir.",
+"Bilgisayar yavaşsa önce yeniden başlat. Teknisyenlerin çoğu bunu söyler, gerisi söylemeden yapar.",
+"Oyunda lag varsa suçlu çoğu zaman internet değil, arkada açık 47 Chrome sekmesidir.",
+"Windows + L: kalkmadan önce bilgisayarı kilitle, arkadaşların profiline şaka yapmasın."
+];
+function yeniTrik(){
+const t = document.getElementById('trick');
+t.style.opacity = 0;
+setTimeout(() => {
+t.textContent = trikler[Math.floor(Math.random() * trikler.length)];
+t.style.opacity = 1;
+}, 300);
+}
+</script>
+</body>
+</html>
+```
