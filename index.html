@@ -114,6 +114,8 @@ display:flex; flex-direction:column; align-items:center; justify-content:center;
 color:#6e6e73; font-size:.85rem; transition:transform .3s, border-color .3s; }
 .slot .ico { font-size:2.2rem; opacity:.5; }
 .slot:hover { transform:translateY(-4px); border-color:#7cf7c4; }
+.slot.dolu { color:#f5f5f7; text-decoration:none; border-color:rgba(233,196,106,.5); }
+.slot.dolu .ico { opacity:1; }
 
 .tip-box { margin-top:40px; background:rgba(29,29,31,.8); backdrop-filter:blur(10px); border-radius:24px; padding:40px; max-width:640px; width:100%; }
 .tip-box p { font-size:1.3rem; min-height:3.5em; transition:opacity .4s; }
@@ -208,9 +210,9 @@ footer { text-align:center; padding:60px 24px; color:#6e6e73; font-size:.85rem; 
 <section id="envanter">
 <div class="eyebrow reveal">🎒 Envanter</div>
 <h2 class="reveal">Craft ettiğim aletler burada.</h2>
-<p class="lead reveal">Şimdilik çanta boş. İlk loot yolda, yükleniyor... %3.</p>
+<p class="lead reveal">İlk loot düştü! Gerisi yolda, yükleniyor... %25.</p>
 <div class="inv reveal">
-<div class="slot"><div class="ico">🔒</div>Yakında</div>
+<a class="slot dolu" href="yol-hesap/"><div class="ico">⛽</div>Yol Hesabı</a>
 <div class="slot"><div class="ico">🔒</div>Yakında</div>
 <div class="slot"><div class="ico">🔒</div>Yakında</div>
 <div class="slot"><div class="ico">🔒</div>Yakında</div>

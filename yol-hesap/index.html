@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yol Hesabı</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{
+    --bg:#070914; --kart:rgba(255,255,255,.05); --cizgi:rgba(255,255,255,.12);
+    --yazi:#eef0f8; --soluk:#9aa0b8; --altin:#e9c46a; --yesil:#5ad19a; --kirmizi:#ff7a7a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#1b2150 0%,transparent 60%),var(--bg);
+    color:var(--yazi);font:16px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+  .sar{max-width:1100px;margin:0 auto;padding:32px 16px 60px}
+  .geri{display:inline-block;margin-bottom:14px;color:var(--soluk);text-decoration:none;font-size:14px}
+  .geri:hover{color:var(--altin)}
+  h1{font-size:clamp(32px,6vw,52px);margin:0;letter-spacing:-.02em}
+  h1 span{color:var(--altin)}
+  .alt{color:var(--soluk);margin:6px 0 24px}
+  .izgara{display:grid;grid-template-columns:360px 1fr;gap:20px}
+  @media(max-width:860px){.izgara{grid-template-columns:1fr}}
+  .kart{background:var(--kart);border:1px solid var(--cizgi);border-radius:18px;padding:18px;backdrop-filter:blur(10px)}
+  label{display:block;font-size:13px;color:var(--soluk);margin:12px 0 4px}
+  input,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--cizgi);
+    background:rgba(0,0,0,.35);color:var(--yazi);font-size:15px}
+  input:focus,select:focus{outline:2px solid var(--altin);outline-offset:-1px}
+  .iki{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .yer{position:relative}
+  .oneri{position:absolute;z-index:1000;left:0;right:0;top:100%;background:#151a33;border:1px solid var(--cizgi);
+    border-radius:10px;margin-top:4px;overflow:hidden;display:none}
+  .oneri div{padding:8px 12px;cursor:pointer;font-size:14px}
+  .oneri div:hover{background:rgba(233,196,106,.15)}
+  .ekle{display:inline-block;margin-top:8px;color:var(--altin);font-size:13px;text-decoration:none}
+  .durak{display:flex;gap:6px;align-items:center}
+  .durak .yer{flex:1}
+  .sil{background:none;border:1px solid var(--cizgi);color:var(--soluk);border-radius:8px;width:34px;height:40px;cursor:pointer}
+  .onay{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px;color:var(--yazi)}
+  .onay input{width:auto}
+  button{width:100%;margin-top:18px;padding:13px;border:0;border-radius:12px;background:var(--altin);
+    color:#1a1400;font-weight:700;font-size:16px;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  #harita{height:380px;border-radius:14px;overflow:hidden;border:1px solid var(--cizgi)}
+  .sonuc{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+  @media(max-width:600px){.sonuc{grid-template-columns:1fr 1fr}}
+  .kutu{background:rgba(0,0,0,.3);border:1px solid var(--cizgi);border-radius:14px;padding:12px}
+  .kutu small{color:var(--soluk);font-size:12px}
+  .kutu b{display:block;font-size:22px;margin-top:2px}
+  .kutu.toplam b{color:var(--altin)}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  td,th{padding:8px 6px;border-bottom:1px solid var(--cizgi);text-align:left}
+  td:last-child,th:last-child{text-align:right}
+  th{color:var(--soluk);font-weight:500}
+  .not{font-size:12.5px;color:var(--soluk);margin-top:12px}
+  .hata{color:var(--kirmizi);font-size:14px;margin-top:10px;min-height:1em}
+  details{margin-top:14px}
+  summary{cursor:pointer;color:var(--altin);font-size:14px}
+  .ayar td input{width:90px;padding:6px 8px;text-align:right}
+  h3{margin:18px 0 4px;font-size:16px}
+</style>
+</head>
+<body>
+<div class="sar">
+  <a href="/#envanter" class="geri">← Envanter'e dön</a>
+  <h1>Yol <span>Hesabı</span></h1>
+  <p class="alt">Nereden nereye, kaç litre, kaç para? Hesap bizden, çay senden. ☕</p>
+
+  <div class="izgara">
+    <div class="kart">
+      <label for="nereden">Çıkış yeri</label>
+      <div class="yer"><input id="nereden" placeholder="Örn: Gebze" autocomplete="off"><div class="oneri"></div></div>
+      <div id="duraklar"></div>
+      <a href="#" id="durakEkle" class="ekle">+ Ara durak ekle</a>
+      <label for="nereye">Varış yeri</label>
+      <div class="yer"><input id="nereye" placeholder="Örn: İzmir" autocomplete="off"><div class="oneri"></div></div>
+
+      <div class="iki">
+        <div><label for="tuketim">Boş tüketim (L/100 km)</label><input id="tuketim" type="number" step="0.1" value="30"></div>
+        <div><label for="yuk">Yük (ton)</label><input id="yuk" type="number" step="0.5" value="20"></div>
+      </div>
+      <div class="iki">
+        <div><label for="tonbasi">Ton başına ek (L/100 km)</label><input id="tonbasi" type="number" step="0.1" value="0.5"></div>
+        <div><label for="fiyat">Motorin (TL/L)</label><input id="fiyat" type="number" step="0.01" value="60"></div>
+      </div>
+      <label for="sinif">Araç sınıfı (KGM)</label>
+      <select id="sinif">
+        <option value="1">1. sınıf: otomobil</option>
+        <option value="2">2. sınıf: 2 dingil, kamyonet / minibüs</option>
+        <option value="3">3. sınıf: 3 dingil, kamyon / otobüs</option>
+        <option value="4" selected>4. sınıf: 4-5 dingil (standart tır)</option>
+        <option value="5">5. sınıf: 6+ dingil</option>
+      </select>
+      <label class="onay"><input type="checkbox" id="donus"> Dönüş yolunu da hesapla</label>
+      <button id="hesapla">Hesapla</button>
+      <div class="hata" id="hata"></div>
+
+      <details>
+        <summary>Ücret ayarları (fiyatları buradan güncelle)</summary>
+        <table class="ayar" id="ayarTablo"></table>
+        <p class="not">Köprü fiyatları 1 Temmuz 2026 KGM tarifesinden alındı. 15 Temmuz ve FSM için güncel fiyatı kendin gir.
+          ✓ işaretli otoyol ücretleri KGM'nin resmi gişeden gişeye tablolarından gelir (8 otoyol).
+          Tabloda olmayan ücretli yollar için km başı kaba tahmin kullanılır.</p>
+      </details>
+    </div>
+
+    <div class="kart">
+      <div id="harita"></div>
+      <div class="sonuc">
+        <div class="kutu"><small>Mesafe</small><b id="rKm">–</b></div>
+        <div class="kutu"><small>Yakıt</small><b id="rLt">–</b></div>
+        <div class="kutu"><small>Yakıt parası</small><b id="rYakit">–</b></div>
+        <div class="kutu toplam"><small>Toplam (yakıt + geçiş)</small><b id="rToplam">–</b></div>
+      </div>
+      <h3>Ücretli yollar ve köprüler</h3>
+      <table id="ucretTablo"><tr><td colspan="2" style="color:var(--soluk)">Hesapla'ya bas, rota çıksın.</td></tr></table>
+      <p class="not" id="detay"></p>
+      <p class="not">Rota binek araca göre çizilir (ücretsiz servis TIR rotası vermiyor). Süre tahmini TIR için ~%25 uzatılmıştır.
+        Bütün rakamlar tahmindir. Yola çıkmadan önce kesin ücreti kontrol et.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="gise-veri.js"></script>
+<script>
+// ---- Köprüler: konum + sınıf 1..5 fiyatı (TL). null = fiyat bilinmiyor, elle girilir.
+const kopruler = [
+  {ad:"Osmangazi Köprüsü",       lat:40.7560, lng:29.5150, fiyat:[1170,1870,2225,2950,3720]},
+  {ad:"1915 Çanakkale Köprüsü",  lat:40.3440, lng:26.6380, fiyat:[1170,1465,2635,2925,5560]},
+  {ad:"Yavuz Sultan Selim Köprüsü", lat:41.2015, lng:29.1125, fiyat:[110,145,270,690,860]},
+  {ad:"15 Temmuz Şehitler Köprüsü", lat:41.0455, lng:29.0345, fiyat:[null,null,null,null,null]},
+  {ad:"Fatih Sultan Mehmet Köprüsü",lat:41.0910, lng:29.0610, fiyat:[null,null,null,null,null]},
+];
+// Otoyol km başı kaba tahmin (TL/km), sınıf 1..5
+let otoyolKm = [1.5, 1.9, 3.2, 3.8, 5.0];
+// Ücretsiz otoyollar: İstanbul çevre yolları, Ankara ve İzmir çevre yolu
+const ucretsizOtoyol = ["O-1","O-2","O-20","O-30"];
+
+const $ = id => document.getElementById(id);
+const tl = n => Math.round(n).toLocaleString("tr-TR") + " TL";
+
+// ---- Ayar tablosu
+function ayarCiz(){
+  const s = +$("sinif").value - 1;
+  let h = "<tr><th>Kalem</th><th>Seçili sınıf (TL)</th></tr>";
+  kopruler.forEach((k,i)=>{
+    h += `<tr><td>${k.ad}</td><td><input type="number" data-k="${i}" value="${k.fiyat[s] ?? ""}" placeholder="?"></td></tr>`;
+  });
+  h += `<tr><td>Otoyol (TL/km, tahmini)</td><td><input type="number" step="0.1" data-o="1" value="${otoyolKm[s]}"></td></tr>`;
+  $("ayarTablo").innerHTML = h;
+  $("ayarTablo").querySelectorAll("input").forEach(inp=>inp.addEventListener("change",()=>{
+    const v = inp.value === "" ? null : +inp.value;
+    if(inp.dataset.k !== undefined) kopruler[+inp.dataset.k].fiyat[s] = v;
+    else otoyolKm[s] = v || 0;
+    if(sonRota) sonucCiz();
+  }));
+}
+$("sinif").addEventListener("change",()=>{ayarCiz(); if(sonRota) sonucCiz();});
+ayarCiz();
+
+// ---- Yer arama (Photon / OpenStreetMap)
+// Seçilen konum, kutunun kendisinde (inp.yer) saklanır
+function aramaKur(inp){
+  const kutu = inp.nextElementSibling; let zaman;
+  inp.addEventListener("input",()=>{
+    inp.yer = null; clearTimeout(zaman);
+    const q = inp.value.trim(); if(q.length < 2){kutu.style.display="none";return;}
+    zaman = setTimeout(async()=>{
+      try{
+        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&bbox=25.6,35.8,44.9,42.2`);
+        const j = await r.json();
+        kutu.innerHTML = "";
+        j.features.forEach(f=>{
+          const p = f.properties;
+          const ad = [p.name, p.district, p.city || p.county, p.state].filter((v,i,a)=>v && a.indexOf(v)===i).join(", ");
+          const d = document.createElement("div"); d.textContent = ad;
+          d.onclick = ()=>{inp.value = ad; inp.yer = {lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0]}; kutu.style.display="none";};
+          kutu.appendChild(d);
+        });
+        kutu.style.display = j.features.length ? "block" : "none";
+      }catch(e){}
+    },300);
+  });
+  document.addEventListener("click",e=>{ if(!inp.parentElement.contains(e.target)) kutu.style.display="none"; });
+}
+aramaKur($("nereden")); aramaKur($("nereye"));
+
+// Ara duraklar
+$("durakEkle").addEventListener("click",e=>{
+  e.preventDefault();
+  const no = $("duraklar").children.length + 1;
+  const d = document.createElement("div");
+  d.innerHTML = `<label>${no}. ara durak</label><div class="durak"><div class="yer"><input placeholder="Örn: Bursa" autocomplete="off"><div class="oneri"></div></div><button type="button" class="sil" title="Durağı sil">×</button></div>`;
+  $("duraklar").appendChild(d);
+  aramaKur(d.querySelector("input"));
+  d.querySelector(".sil").onclick = ()=>{ d.remove(); [...$("duraklar").children].forEach((x,i)=>x.querySelector("label").textContent=`${i+1}. ara durak`); };
+  d.querySelector("input").focus();
+});
+
+async function bul(inp){
+  if(inp.yer) return inp.yer;
+  const q = inp.value.trim(); if(!q) return null;
+  const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1&bbox=25.6,35.8,44.9,42.2`);
+  const f = (await r.json()).features[0];
+  return f ? (inp.yer = {lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0]}) : null;
+}
+
+// ---- Harita
+const harita = L.map("harita").setView([39.2,35.2],5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap"}).addTo(harita);
+let katman = L.layerGroup().addTo(harita);
+
+function mesafe(a,b){ // metre
+  const R=6371000, r=Math.PI/180, dLa=(b[0]-a[0])*r, dLo=(b[1]-a[1])*r;
+  const x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+
+// ---- Hesap
+let sonRota = null;
+$("hesapla").addEventListener("click", async()=>{
+  $("hata").textContent = ""; $("hesapla").disabled = true; $("hesapla").textContent = "Hesaplanıyor...";
+  try{
+    const kutular = [$("nereden"), ...$("duraklar").querySelectorAll("input"), $("nereye")]
+      .filter((k,i,arr)=> i===0 || i===arr.length-1 || k.value.trim());
+    const noktalar = [];
+    for(const k of kutular){
+      const p = await bul(k);
+      if(!p) throw new Error(`"${k.value || "boş kutu"}" bulunamadı. Listeden seçmeyi dene.`);
+      noktalar.push(p);
+    }
+    const url = `https://router.project-osrm.org/route/v1/driving/${noktalar.map(p=>p.lng+","+p.lat).join(";")}?overview=full&geometries=geojson&steps=true`;
+    const j = await (await fetch(url)).json();
+    if(j.code !== "Ok") throw new Error("Rota bulunamadı. Başka bir yer dene.");
+    const rota = j.routes[0];
+    const koord = rota.geometry.coordinates.map(c=>[c[1],c[0]]);
+
+    // Ücretli yol km'si ve isimleri
+    let ucretliM = 0; const yollar = {};
+    rota.legs.flatMap(l=>l.steps).forEach(s=>{
+      // OSM'de "toll" etiketi gelmezse "O-" numaralı otoyolları ücretli say (ücretsiz çevre yolları hariç)
+      const oNo = (s.ref||"").split(/[;,]/).map(t=>t.trim()).find(t=>/^O-\d+$/.test(t));
+      const ucretli = (s.intersections||[]).some(x=>(x.classes||[]).includes("toll"))
+        || (oNo && !ucretsizOtoyol.includes(oNo));
+      if(ucretli && s.distance > 0){
+        ucretliM += s.distance;
+        const ad = s.ref || s.name || "İsimsiz ücretli yol";
+        yollar[ad] = (yollar[ad]||0) + s.distance;
+      }
+    });
+    // Rota üstündeki köprüler (1,5 km yakınından geçiyorsa)
+    const gecilen = kopruler.filter(k=>{
+      for(let i=0;i<koord.length;i+=3) if(mesafe(koord[i],[k.lat,k.lng]) < 1500) return true;
+      return false;
+    });
+
+    // Resmi gişe tablosu: rotanın içinden geçtiği gişeleri bul (50 m yakınından geçiyorsa)
+    const kum = [0]; for(let i=1;i<koord.length;i++) kum.push(kum[i-1] + mesafe(koord[i-1],koord[i]));
+    const yakin = (a,b) => { const dy=(a[0]-b[0])*111000, dx=(a[1]-b[1])*111000*Math.cos(a[0]*Math.PI/180); return dx*dx+dy*dy < 2500; };
+    const tablolar = [];
+    GISE_VERI.forEach(t=>{
+      const vurus = [];
+      t.ist.forEach((s,si)=>{
+        if(!s.p.length) return;
+        for(let i=0;i<koord.length;i++) if(s.p.some(p=>yakin(koord[i],p))){ vurus.push({si,i}); break; }
+      });
+      if(vurus.length < 2) return;
+      vurus.sort((a,b)=>a.i-b.i);
+      const g = vurus[0], c = vurus[vurus.length-1];
+      const fiyat = t.f[g.si+","+c.si] || t.f[c.si+","+g.si];
+      if(!fiyat) return;
+      tablolar.push({ad:t.ad, tarih:t.tarih, kopru:t.kopru, giris:t.ist[g.si].ad, cikis:t.ist[c.si].ad, fiyat, km:(kum[c.i]-kum[g.i])/1000});
+    });
+
+    sonRota = {km:rota.distance/1000, sure:rota.duration, ucretliKm:ucretliM/1000, yollar, gecilen, tablolar};
+    katman.clearLayers();
+    const cizgi = L.polyline(koord,{color:"#e9c46a",weight:5}).addTo(katman);
+    noktalar.forEach((p,i)=>L.marker([p.lat,p.lng]).bindPopup(
+      i===0 ? "Çıkış" : i===noktalar.length-1 ? "Varış" : `${i}. ara durak`).addTo(katman));
+    gecilen.forEach(k=>L.circleMarker([k.lat,k.lng],{radius:8,color:"#ff7a7a"}).bindPopup(k.ad).addTo(katman));
+    harita.fitBounds(cizgi.getBounds(),{padding:[20,20]});
+    sonucCiz();
+  }catch(e){ $("hata").textContent = e.message || "Bir şeyler ters gitti. İnternet bağlantını kontrol et."; }
+  $("hesapla").disabled = false; $("hesapla").textContent = "Hesapla";
+});
+
+["tuketim","yuk","tonbasi","fiyat","donus"].forEach(id=>$(id).addEventListener("input",()=>sonRota && sonucCiz()));
+
+function sonucCiz(){
+  const r = sonRota, kat = $("donus").checked ? 2 : 1, s = +$("sinif").value - 1;
+  const tuketim = (+$("tuketim").value||0) + (+$("yuk").value||0) * (+$("tonbasi").value||0);
+  const km = r.km * kat, litre = km/100*tuketim, yakit = litre*(+$("fiyat").value||0);
+
+  let gecis = 0, h = "<tr><th>Kalem</th><th>Tahmini ücret</th></tr>", eksik = false;
+  const buyuk = s => s.toLocaleLowerCase("tr").replace(/(^|[\s(\-])[^\s(\-]/g, m=>m.toLocaleUpperCase("tr"));
+  let tabloKm = 0;
+  r.tablolar.forEach(t=>{
+    gecis += t.fiyat[s]*kat; tabloKm += t.km;
+    h += `<tr><td>${t.ad}${kat>1?" (×2)":""}<br><small style="color:var(--soluk)">${buyuk(t.giris)} → ${buyuk(t.cikis)} · KGM tarifesi ${t.tarih}</small></td><td>${tl(t.fiyat[s]*kat)} ✓</td></tr>`;
+  });
+  const kopruDahil = r.tablolar.map(t=>t.kopru).filter(Boolean);
+  r.gecilen.filter(k=>!kopruDahil.includes(k.ad)).forEach(k=>{
+    const f = k.fiyat[s];
+    if(f == null){ eksik = true; h += `<tr><td>${k.ad}</td><td>fiyat girilmedi</td></tr>`; }
+    else { gecis += f*kat; h += `<tr><td>${k.ad}${kat>1?" (×2)":""}</td><td>${tl(f*kat)}</td></tr>`; }
+  });
+  // Tabloyla karşılanmayan ücretli km için kaba tahmin
+  const kalanKm = Math.max(0, r.ucretliKm - tabloKm);
+  const adlar = Object.entries(r.yollar).sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]).join(", ");
+  if(kalanKm > 5 && !r.tablolar.length){
+    const oy = kalanKm * otoyolKm[s] * kat;
+    h += `<tr><td>Ücretli otoyol, ${Math.round(kalanKm*kat)} km<br><small style="color:var(--soluk)">${adlar} · resmi tablo yok, km başı kaba tahmin</small></td><td>~${tl(oy)}</td></tr>`;
+    gecis += oy;
+  } else if(kalanKm > 20){
+    // Tablo bulundu ama otoyolun bir kısmı tablo dışında kaldı (çoğu zaman ücretsiz bağlantı/çevre yolu)
+    h += `<tr><td colspan="2"><small style="color:var(--soluk)">ℹ️ Rotadaki ${Math.round(kalanKm*kat)} km otoyol (${adlar}) bir gişe tablosuyla eşleşmedi. Çoğu zaman ücretsiz çevre yoludur; giriş gişesi tanınmadıysa ücret biraz eksik çıkmış olabilir.</small></td></tr>`;
+  }
+  if(!r.gecilen.length && !r.tablolar.length && kalanKm <= 5) h += `<tr><td colspan="2">Rotada ücretli yol görünmüyor. 🎉</td></tr>`;
+  h += `<tr><td><b>Geçiş toplamı</b></td><td><b>${tl(gecis)}</b></td></tr>`;
+
+  $("ucretTablo").innerHTML = h;
+  $("rKm").textContent = Math.round(km).toLocaleString("tr-TR") + " km";
+  $("rLt").textContent = Math.round(litre).toLocaleString("tr-TR") + " L";
+  $("rYakit").textContent = tl(yakit);
+  $("rToplam").textContent = tl(yakit + gecis) + (eksik ? "+" : "");
+  const saat = r.sure*1.25*kat/3600;
+  $("detay").textContent = `Yüklü tüketim: ${tuketim.toFixed(1)} L/100 km · TIR için tahmini sürüş süresi: ${Math.floor(saat)} sa ${Math.round(saat%1*60)} dk (mola hariç)`;
+}
+</script>
+</body>
+</html>
