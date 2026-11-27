@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Profil</title>
+<style>
+  :root{
+    --bg:#05060c; --kart:rgba(255,255,255,.05); --cizgi:rgba(255,255,255,.12);
+    --yazi:#f5f5f7; --soluk:#8e8e93; --vurgu:#7cf7c4; --altin:#e9c46a; --kirmizi:#ff7a7a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--yazi);
+    background:radial-gradient(1000px 500px at 80% -10%,#162040 0%,transparent 60%),var(--bg);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif}
+  .sar{max-width:680px;margin:0 auto;padding:28px 16px 60px}
+  .geri{color:var(--soluk);text-decoration:none;font-size:14px}
+  .geri:hover{color:var(--vurgu)}
+  h1{font-size:clamp(34px,7vw,52px);letter-spacing:-.03em;margin:14px 0 4px}
+  h1 span{color:var(--vurgu)}
+  .alt{color:var(--soluk);margin:0 0 24px}
+  .kart{background:var(--kart);border:1px solid var(--cizgi);border-radius:20px;padding:20px;backdrop-filter:blur(12px);margin-bottom:16px}
+  h2{font-size:19px;margin:0 0 12px}
+  label{display:block;font-size:13px;color:var(--soluk);margin:12px 0 4px}
+  input,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--cizgi);
+    background:rgba(0,0,0,.35);color:var(--yazi);font:inherit}
+  textarea{resize:vertical;min-height:70px}
+  input:focus,textarea:focus{outline:2px solid var(--vurgu);outline-offset:-1px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 18px;font-weight:600}
+  .ana{background:var(--vurgu);color:#04140d;width:100%;margin-top:16px}
+  .ana:disabled{opacity:.6;cursor:wait}
+  .bag{background:none;color:var(--soluk);padding:8px 0;font-weight:400;text-decoration:underline}
+  .mesaj{min-height:1.2em;font-size:14px;margin-top:10px}
+  .mesaj.hata{color:var(--kirmizi)} .mesaj.iyi{color:var(--vurgu)}
+  .ust{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .cikis{background:rgba(255,255,255,.08);color:var(--yazi);padding:8px 14px;font-size:14px}
+  .yaz{display:flex;gap:8px;align-items:stretch}
+  .yaz textarea{flex:1}
+  .mik{width:56px;font-size:22px;background:rgba(255,255,255,.08);color:var(--yazi)}
+  .mik.dinliyor{background:var(--kirmizi);animation:nabiz 1s infinite}
+  @keyframes nabiz{50%{opacity:.6}}
+  .gun{font-size:13px;color:var(--altin);margin:18px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+  .not{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--cizgi)}
+  .not input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--vurgu);flex:none}
+  .not .govde{flex:1;min-width:0;white-space:pre-wrap;word-wrap:break-word}
+  .not.bitti .metin{text-decoration:line-through;color:var(--soluk)}
+  .not small{display:block;color:var(--soluk);font-size:12px;margin-top:2px}
+  .sil{background:none;color:var(--soluk);padding:2px 6px;font-size:18px;font-weight:400}
+  .sil:hover{color:var(--kirmizi)}
+  .bos{color:var(--soluk);text-align:center;padding:20px 0}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="sar">
+  <a href="/" class="geri">← Ana sayfa</a>
+  <h1>Pro<span>fil</span></h1>
+  <p class="alt" id="altYazi">Karakter ekranı yükleniyor...</p>
+
+  <!-- Giriş -->
+  <form class="kart" id="girisForm" hidden>
+    <h2>🔑 Giriş yap</h2>
+    <label for="eposta">E-posta</label>
+    <input id="eposta" type="email" autocomplete="email" required>
+    <label for="sifre">Şifre</label>
+    <input id="sifre" type="password" autocomplete="current-password" required>
+    <button class="ana" type="submit">Giriş yap</button>
+    <button class="bag" type="button" id="unuttumBtn">Şifremi unuttum</button>
+    <div class="mesaj" id="girisMesaj"></div>
+  </form>
+
+  <!-- Şifremi unuttum -->
+  <form class="kart" id="unuttumForm" hidden>
+    <h2>📬 Şifre sıfırlama</h2>
+    <p class="alt">E-postanı yaz, sana şifre yenileme bağlantısı gönderelim.</p>
+    <label for="unuttumEposta">E-posta</label>
+    <input id="unuttumEposta" type="email" autocomplete="email" required>
+    <button class="ana" type="submit">Bağlantı gönder</button>
+    <button class="bag" type="button" id="geriGiris">Girişe dön</button>
+    <div class="mesaj" id="unuttumMesaj"></div>
+  </form>
+
+  <!-- Davet kabul / yeni şifre -->
+  <form class="kart" id="sifreForm" hidden>
+    <h2 id="sifreBaslik">🔒 Şifreni belirle</h2>
+    <label for="yeniSifre">Yeni şifre (en az 8 karakter)</label>
+    <input id="yeniSifre" type="password" autocomplete="new-password" minlength="8" required>
+    <button class="ana" type="submit">Kaydet</button>
+    <div class="mesaj" id="sifreMesaj"></div>
+  </form>
+
+  <!-- Profil + notlar -->
+  <div id="profil" hidden>
+    <div class="kart ust">
+      <div><b id="kullanici"></b><small style="display:block;color:var(--soluk)">Sadece sen görebilirsin.</small></div>
+      <button class="cikis" id="cikisBtn">Çıkış</button>
+    </div>
+    <div class="kart">
+      <h2>📝 Notlarım</h2>
+      <div class="yaz">
+        <textarea id="notMetin" placeholder="Yaz ya da 🎤 tuşuna basıp konuş..." maxlength="2000"></textarea>
+        <button class="mik" id="mikBtn" type="button" title="Sesle not al" aria-label="Sesle not al">🎤</button>
+      </div>
+      <button class="ana" id="ekleBtn">Notu kaydet</button>
+      <div class="mesaj" id="notMesaj"></div>
+      <div id="liste"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { login, logout, getUser, handleAuthCallback, acceptInvite, requestPasswordRecovery, updateUser }
+  from "https://cdn.jsdelivr.net/npm/@netlify/identity@2.0.1/+esm";
+
+const $ = id => document.getElementById(id);
+const goster = id => ["girisForm","unuttumForm","sifreForm","profil"].forEach(x => $(x).hidden = x !== id);
+const mesaj = (id, metin, tur = "hata") => { $(id).textContent = metin; $(id).className = "mesaj " + tur; };
+const hataMetni = e => {
+  const m = String(e?.message || e || "");
+  if (/invalid|credentials|grant/i.test(m)) return "E-posta veya şifre hatalı.";
+  if (/not configured|identity/i.test(m)) return "Giriş sistemi henüz açılmamış (Netlify Identity).";
+  if (/expired|token/i.test(m)) return "Bağlantının süresi dolmuş. Yeniden iste.";
+  if (/password/i.test(m)) return "Şifre kabul edilmedi. En az 8 karakter dene.";
+  return "Bir şeyler ters gitti: " + m;
+};
+let sifreModu = null, davetToken = null;
+
+// ---- Açılış: e-postadaki bağlantıdan mı gelindi?
+async function basla(){
+  try {
+    const sonuc = await handleAuthCallback();
+    if (sonuc?.type === "invite" && sonuc.token) {
+      davetToken = sonuc.token; sifreModu = "davet";
+      $("sifreBaslik").textContent = "🎉 Hoş geldin! Şifreni belirle";
+      $("altYazi").textContent = "Davetini kabul etmek için bir şifre seç.";
+      return goster("sifreForm");
+    }
+    if (sonuc?.type === "recovery") {
+      sifreModu = "yenile";
+      $("sifreBaslik").textContent = "🔒 Yeni şifreni belirle";
+      $("altYazi").textContent = "Neredeyse bitti.";
+      return goster("sifreForm");
+    }
+  } catch (e) { mesaj("girisMesaj", hataMetni(e)); }
+  const user = await getUser().catch(() => null);
+  user ? profilAc(user) : girisAc();
+}
+
+function girisAc(){ $("altYazi").textContent = "Notların seni burada bekliyor. Önce giriş yap."; goster("girisForm"); }
+
+async function profilAc(user){
+  $("kullanici").textContent = user.email;
+  $("altYazi").textContent = "Oyuncu kartın hazır. Aklına geleni at, unutma derdi bizde.";
+  goster("profil");
+  await notlariGetir();
+}
+
+// ---- Formlar
+$("girisForm").addEventListener("submit", async e => {
+  e.preventDefault(); mesaj("girisMesaj", "Giriş yapılıyor...", "iyi");
+  try { const u = await login($("eposta").value.trim(), $("sifre").value); $("sifre").value = ""; profilAc(u); }
+  catch (err) { mesaj("girisMesaj", hataMetni(err)); }
+});
+$("unuttumBtn").onclick = () => { $("unuttumEposta").value = $("eposta").value; goster("unuttumForm"); };
+$("geriGiris").onclick = () => goster("girisForm");
+$("unuttumForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try { await requestPasswordRecovery($("unuttumEposta").value.trim()); mesaj("unuttumMesaj", "Bağlantı gönderildi. E-postanı (ve spam klasörünü) kontrol et.", "iyi"); }
+  catch (err) { mesaj("unuttumMesaj", hataMetni(err)); }
+});
+$("sifreForm").addEventListener("submit", async e => {
+  e.preventDefault(); const sifre = $("yeniSifre").value;
+  if (sifre.length < 8) return mesaj("sifreMesaj", "Şifre en az 8 karakter olmalı.");
+  try {
+    const u = sifreModu === "davet" ? await acceptInvite(davetToken, sifre) : await updateUser({ password: sifre });
+    $("yeniSifre").value = ""; history.replaceState(null, "", location.pathname); profilAc(u);
+  } catch (err) { mesaj("sifreMesaj", hataMetni(err)); }
+});
+$("cikisBtn").onclick = async () => { await logout().catch(() => {}); $("liste").innerHTML = ""; girisAc(); };
+
+// ---- Notlar (sunucu: /api/notlar)
+let notlar = [];
+async function api(method, govde){
+  const r = await fetch("/api/notlar", { method, headers: { "Content-Type": "application/json" },
+    body: govde ? JSON.stringify(govde) : undefined, credentials: "same-origin" });
+  const veri = await r.json().catch(() => ({}));
+  if (r.status === 401) { girisAc(); throw new Error("Oturumun kapanmış, tekrar giriş yap."); }
+  if (!r.ok) throw new Error(veri.hata || "Sunucu hatası");
+  return veri;
+}
+async function notlariGetir(){
+  try { notlar = await api("GET"); ciz(); } catch (e) { mesaj("notMesaj", e.message); }
+}
+function ciz(){
+  const liste = $("liste"); liste.innerHTML = "";
+  if (!notlar.length) { liste.innerHTML = '<div class="bos">Henüz not yok. İlk notunu ekle! 🎯</div>'; return; }
+  const bugun = new Date().toDateString(), dun = new Date(Date.now() - 864e5).toDateString();
+  let sonGun = "";
+  for (const n of notlar) {
+    const t = new Date(n.zaman);
+    const gun = t.toDateString() === bugun ? "Bugün" : t.toDateString() === dun ? "Dün"
+      : t.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" });
+    if (gun !== sonGun) { const g = document.createElement("div"); g.className = "gun"; g.textContent = gun; liste.appendChild(g); sonGun = gun; }
+    const d = document.createElement("div"); d.className = "not" + (n.bitti ? " bitti" : "");
+    const kutu = document.createElement("input"); kutu.type = "checkbox"; kutu.checked = n.bitti; kutu.title = "Yapıldı";
+    kutu.onchange = () => degistir("PATCH", { id: n.id, bitti: kutu.checked });
+    const govde = document.createElement("div"); govde.className = "govde";
+    const metin = document.createElement("div"); metin.className = "metin"; metin.textContent = n.metin;
+    const saat = document.createElement("small");
+    saat.textContent = "🕒 " + t.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) + " · " + t.toLocaleDateString("tr-TR");
+    govde.append(metin, saat);
+    const sil = document.createElement("button"); sil.className = "sil"; sil.textContent = "×"; sil.title = "Sil";
+    sil.onclick = () => { if (confirm("Bu not silinsin mi?")) degistir("DELETE", { id: n.id }); };
+    d.append(kutu, govde, sil); liste.appendChild(d);
+  }
+}
+async function degistir(method, govde){
+  try { notlar = await api(method, govde); ciz(); mesaj("notMesaj", ""); } catch (e) { mesaj("notMesaj", e.message); notlariGetir(); }
+}
+$("ekleBtn").onclick = async () => {
+  const metin = $("notMetin").value.trim(); if (!metin) return mesaj("notMesaj", "Önce bir şey yaz ya da söyle.");
+  $("ekleBtn").disabled = true;
+  try { notlar = await api("POST", { metin }); $("notMetin").value = ""; ciz(); mesaj("notMesaj", "Kaydedildi ✓", "iyi"); }
+  catch (e) { mesaj("notMesaj", e.message); }
+  $("ekleBtn").disabled = false;
+};
+
+// ---- Sesle not (tarayıcının konuşma tanıma özelliği)
+const Tanima = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!Tanima) { $("mikBtn").hidden = true; }
+else {
+  let tani = null;
+  $("mikBtn").onclick = () => {
+    if (tani) { tani.stop(); return; }
+    tani = new Tanima(); tani.lang = "tr-TR"; tani.interimResults = true; tani.continuous = false;
+    const onceki = $("notMetin").value.trim();
+    tani.onresult = e => {
+      const soz = Array.from(e.results).map(r => r[0].transcript).join("");
+      $("notMetin").value = (onceki ? onceki + " " : "") + soz;
+    };
+    tani.onerror = e => mesaj("notMesaj", e.error === "not-allowed" ? "Mikrofon izni verilmedi." : "Ses anlaşılamadı, tekrar dene.");
+    tani.onend = () => { tani = null; $("mikBtn").classList.remove("dinliyor"); };
+    $("mikBtn").classList.add("dinliyor"); mesaj("notMesaj", "Dinliyorum... konuş 🎙️", "iyi");
+    tani.start();
+  };
+}
+
+basla();
+</script>
+</body>
+</html>
